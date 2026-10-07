@@ -269,7 +269,7 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
       el.innerHTML='<div class="road"></div><div class="rig" tabindex="0" role="slider" aria-label="Voiture '+(i+1)+'">'+CAR+
         '<span class="tile pusher"></span></div><div class="acts" hidden>'+
         '<button class="act listen" aria-label="Écouter la syllabe">'+ICON.listen+'</button>'+
-        '<button class="act next" aria-label="Continuer">'+ICON.next+'</button></div>';
+        '<button class="act next" hidden aria-label="Continuer">'+ICON.next+'</button></div>';
       stage.appendChild(el);
       var lane={el:el,rig:el.querySelector('.rig'),pusherEl:el.querySelector('.pusher'),acts:el.querySelector('.acts'),
         wheels:el.querySelectorAll('.wh'),targets:[],idx:0,x:PAD,max:PAD,T:80,drag:null,key:''};
@@ -322,6 +322,7 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
 
   function next(lane){
     var t=lane.targets[lane.idx];if(!t)return;
+    lane.armed=false;
     if(lane.idx>=lane.targets.length-1){
       fill(lane);lane.rig.classList.add('glide');layout();
       setTimeout(function(){lane.rig.classList.remove('glide');},600);
@@ -347,6 +348,13 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
     var rig=lane.rig;
     rig.addEventListener('pointerdown',function(e){
       if(lane.drag)return;
+      // Deuxième appui sur la voiture après une fusion : elle repart vers la lettre suivante
+      if(lane.armed&&lane.el.classList.contains('fused')){
+        var wasLast=lane.idx>=lane.targets.length-1;
+        lane.armed=false;next(lane);
+        if(wasLast){e.preventDefault();return;}
+      }
+      lane.armed=false;
       try{rig.setPointerCapture(e.pointerId);}catch(err){}
       rig.classList.remove('glide');
       lane.drag={id:e.pointerId,dx:e.clientX-lane.x};e.preventDefault();
@@ -359,6 +367,7 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
       if(!lane.drag||e.pointerId!==lane.drag.id)return;
       lane.drag=null;
       if(lane.targets[lane.idx]&&lane.max-lane.x<lane.T*0.2)setX(lane,lane.max);
+      lane.armed=lane.el.classList.contains('fused');
     }
     rig.addEventListener('pointerup',end);rig.addEventListener('pointercancel',end);
     rig.addEventListener('keydown',function(e){
