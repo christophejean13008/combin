@@ -187,8 +187,8 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
 <script>
 (function(){
   var CONS=['l','m','r','s','f','n','v','j','ch','p','t','b','d','z'];
-  var VOY=['a','i','o','u','e','é','ou'];
-  var DIG=['on','an','en','in','ain','ein','un','oi','oin','au','eau','ai','ei','è','ê','eu','œu','ien','aille','eille','ouille','ille'];
+  var VOY=['a','i','o','u','e','é'];
+  var DIG=['ou','on','an','en','in','ain','ein','un','oi','oin','au','eau','ai','ei','è','ê','eu','œu','ien','aille','eille','ouille','ille'];
   var VC_CONS=['l','r','s','f','p','t'], VC_VOY=['a','i','o','u','ou'];
   var WORDS=('moto lama mari papa puma sofa judo vélo bébé fumé tata tutu dodo loto midi pari relu salé sali lavé levé tapé limé ramé ridé '+
     'rira lira sera fera dira vola tira nana pavé puni fini poli joli bobo toutou doudou loulou nounou joujou moulu voulu roulé chouchou '+
@@ -208,6 +208,8 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
   var PAD=16, KEY='adaptsyllabe';
   var S={mode:'cv',cons:['m','l','r','s'],voy:['a','i','o','u'],dig:[],lanes:3,caps:false,colors:true,listen:true,font:'andika'};
   try{var saved=JSON.parse(localStorage.getItem(KEY)||'null');if(saved){for(var k in S){if(saved[k]!==undefined)S[k]=saved[k];}}}catch(e){}
+  // Le « ou » a quitté les voyelles pour les sons complexes
+  if(S.voy.indexOf('ou')>=0){S.voy=S.voy.filter(function(x){return x!=='ou';});S.dig=S.dig||[];if(S.dig.indexOf('ou')<0)S.dig.push('ou');}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
 
   var $=function(id){return document.getElementById(id);};
@@ -237,14 +239,14 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
   function inter(a,b){return a.filter(function(x){return b.indexOf(x)>=0;});}
   function pools(){
     if(S.mode==='vc'){
-      var c=inter(S.cons,VC_CONS),v=inter(S.voy,VC_VOY);
+      var c=inter(S.cons,VC_CONS),v=inter(S.voy.concat(S.dig||[]),VC_VOY);
       return {cons:c.length?c:['l','r','s'],voy:v.length?v:['a','i','o']};
     }
     return {cons:S.cons,voy:S.voy.concat(S.dig||[])};
   }
   function possibleWords(){
     return WORDS.filter(function(w){var t=tokens(w);
-      return S.cons.indexOf(t[0])>=0&&S.cons.indexOf(t[2])>=0&&S.voy.indexOf(t[1])>=0&&S.voy.indexOf(t[3])>=0;});
+      return S.cons.indexOf(t[0])>=0&&S.cons.indexOf(t[2])>=0&&S.voy.concat(S.dig||[]).indexOf(t[1])>=0&&S.voy.concat(S.dig||[]).indexOf(t[3])>=0;});
   }
   function pick(list,avoid){var free=list.filter(function(x){return avoid.indexOf(x)<0;});var src=free.length?free:list;return src[Math.floor(Math.random()*src.length)];}
 
@@ -443,10 +445,10 @@ button:focus-visible,.rig:focus-visible{outline:3px solid var(--accent);outline-
     $('opt-caps').setAttribute('aria-pressed',S.caps?'true':'false');
     $('opt-listen').setAttribute('aria-pressed',S.listen?'true':'false');
     var note='';
-    if(S.mode==='vc')note='Les sons complexes ne servent qu\'en mode Syllabe. En syllabe inversée, seules les consonnes l, r, s, f, p, t et les voyelles a, i, o, u, ou sont utilisées, pour éviter les sons an, on, in.';
+    if(S.mode==='vc')note='En syllabe inversée, seules les consonnes l, r, s, f, p, t et les voyelles a, i, o, u, ou sont utilisées, pour éviter les sons an, on, in.';
     else if(S.mode==='mot'){var n=possibleWords().length;
       note=n?('Mots possibles avec ces lettres : '+n+'.'):'Aucun mot possible avec ces lettres seules : tous les mots de la liste sont proposés.';}
-    else note='En mode Syllabe, la voiture pousse une consonne vers les voyelles et les sons complexes choisis.';
+    else note='La voiture pousse une consonne vers les voyelles et les sons complexes choisis.';
     $('note').textContent=note;
   }
   function applyFont(){
